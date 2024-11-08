@@ -15,7 +15,7 @@ def test_group_words_in_list():
         """épisode Podcast."""
     ]
     words = group_words_in_list(data)
-    TestCase().assertEquals(words, {'bonjour': 1, 'podcast': 3, 'épisode': 1})
+    TestCase().assertEqual(words, {'bonjour': 1, 'podcast': 3, 'épisode': 1})
 
 
 def test_group_words():
@@ -37,7 +37,7 @@ def test_list_of_articles():
          'file3': Article(file_name='file3', text='woord4', word_count={'woord4': 1})},
         articles
     )
-    TestCase().assertEquals(article1.word_count, dict())
+    TestCase().assertEqual(article1.word_count, dict())
 
 
 def test_extract_sections():
@@ -91,7 +91,7 @@ bla bla
             épisode du Cottongue Podcast.
         </p>
   </section>"""
-    TestCase().assertEquals(extracted_data, expected_data)
+    TestCase().assertEqual(extracted_data, expected_data)
 
 
 def test_extract_p_sections():
@@ -119,17 +119,15 @@ bla bla
     extracted_data = extract_p_sections(section)
     expected_data = [
         """<p>
-                Bonjour à tous et bienvenue ! C’est le
-                <span class="tooltips " style="" title="third">
-                    <strong>troisième</strong>
-                </span>
-                épisode du Cottongue Podcast.
-            </p>"""
-        , """<p>
+            Bonjour à tous et bienvenue ! C’est le
+            <span class="tooltips " style="" title="third">
+                <strong>troisième</strong>
+            </span>
             épisode du Cottongue Podcast.
-        </p>"""
+        </p>""",
+ """<p>\n            épisode du Cottongue Podcast.\n        </p>"""
     ]
-    TestCase().assertEquals(extracted_data, expected_data)
+    TestCase().assertEqual(extracted_data, expected_data)
 
 
 def test_extract_text_from_p_section():
@@ -145,7 +143,7 @@ def test_extract_text_from_p_section():
 
     plain_text = extract_text_from_p_section(data)
     expected_data = """Bonjour à tous et bienvenue ! C’est le troisième épisode du Cottongue Podcast."""
-    TestCase().assertEquals(plain_text, expected_data)
+    TestCase().assertEqual(plain_text, expected_data)
 
 
 def test_extract_text_from_all_p_sections():
@@ -175,5 +173,5 @@ def test_extract_text_from_all_p_sections():
         """Bonjour à tous et bienvenue ! C’est le troisième épisode du Cottongue Podcast."""
         , """épisode du Cottongue Podcast."""
     ]
-    TestCase().assertEquals(extracted_data, expected_data)
+    TestCase().assertEqual(extracted_data, expected_data)
 

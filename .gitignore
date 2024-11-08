@@ -3,3 +3,6 @@ frans
 scratch
 secrets
 .idea/
+__pycache__/
+test/__pycache__/
+venv/
