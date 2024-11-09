@@ -1,6 +1,9 @@
+import json
+from pathlib import Path
+
 from word_counter import split_words, group_words, Article, group_words_per_article, extract_transcription_section, \
     extract_sections, extract_p_sections, extract_text_from_p_section, extract_text_from_all_p_sections, \
-    group_words_in_list
+    group_words_in_list, load_all_podcasts_in_file, get_sequence_number_from_file, process_file_data
 from unittest import TestCase
 
 
@@ -23,21 +26,25 @@ def test_group_words():
     TestCase().assertDictEqual({'vous…': 1, 'salut': 1, 'à': 1, 'tous': 1, 'double': 2}, words)
 
 
-def test_list_of_articles():
-    article1 = Article(file_name='file1', text='woord1 woord2')
-    article2 = Article(file_name='file2', text='woord2, woord3')
-    article3 = Article(file_name='file3', text='woord4')
-
-    articles = group_words_per_article(
-        {article1.file_name: article1, article2.file_name: article2, article3.file_name: article3})
-
-    TestCase().assertDictEqual(
-        {'file1': Article(file_name='file1', text='woord1 woord2', word_count={'woord1': 1, 'woord2': 1}),
-         'file2': Article(file_name='file2', text='woord2, woord3', word_count={'woord2': 1, 'woord3': 1}),
-         'file3': Article(file_name='file3', text='woord4', word_count={'woord4': 1})},
-        articles
-    )
-    TestCase().assertEqual(article1.word_count, dict())
+def test_process_file():
+    data = """
+        <!doctype html>
+    <html lang="fr-FR">
+          <section class="elementor-section type="section">
+          </section>
+      <section class="elementor-section elementor-top-section elementor-element elementor-element-5f957d29 elementor-section-boxed elementor-section-height-default elementor-section-height-default" data-id="5f957d29" data-element_type="section">
+          <h2 class="elementor-heading-title elementor-size-default">Transcription de l'épisode</h2>
+            <p>
+                Bonjour 
+                <span class="tooltips " style="" title="third">
+                    <strong>troisième</strong>
+                </span>
+                épisode
+            </p>
+      </section>
+    bla bla
+        """
+    TestCase().assertEqual(process_file_data(data), {'bonjour': 1, 'troisième': 1, 'épisode': 1})
 
 
 def test_extract_sections():
@@ -175,3 +182,31 @@ def test_extract_text_from_all_p_sections():
     ]
     TestCase().assertEqual(extracted_data, expected_data)
 
+
+def load_page_from_test_data(json_file):
+    filename = "./test_files/" + json_file
+    with open(Path(__file__).parent / filename, "r") as f:
+        data:Article = json.load(f)
+
+    return data['text']
+
+
+def test_list_of_episodes_is_loaded():
+    extracted_data:list[Article] = load_all_podcasts_in_file('./test/test_files/urls.txt', load_page_from_test_data)
+    TestCase().assertEqual(2, len(extracted_data))
+    episode_1 = extracted_data[0]
+    episode_2 = extracted_data[1]
+    TestCase().assertEqual('x/1-test.json', episode_1.file_name)
+    TestCase().assertEqual('x/2-test.json', episode_2.file_name)
+    TestCase().assertEqual(1, episode_1.sequence_number)
+    TestCase().assertEqual(2, episode_2.sequence_number)
+
+    TestCase().assertTrue(episode_1.text.index('href="https://innerfrench.com/01-learn-french-naturally/"')>0)
+    TestCase().assertTrue(episode_2.text.index('href="https://innerfrench.com/02-vivre-avec-robots/feed/"')>0)
+
+    TestCase().assertEqual(399, len(episode_1.word_count.keys()))
+    TestCase().assertEqual(398, len(episode_2.word_count.keys()))
+
+
+def test_get_sequence_number_from_file():
+    TestCase().assertEqual(2, get_sequence_number_from_file('https://innerfrench.com/02-vivre-avec-robots/'))

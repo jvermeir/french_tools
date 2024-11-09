@@ -15,5 +15,5 @@ python3 -m venv venv
 source venv/bin/activate
 ```
 
-Create a folder named `secrets` and a file named `userdata.txt`. Find a cookie with a nane like `wordpress_logged_in_`
-and copy its value in the userdata.txt file. This is necessary to access the innerfrench site as a logged in user.
+Create a folder named `secrets` and a file named `userdata.txt`. Open the inner french site and log in. Find a cookie with a name like `wordpress_logged_in_`
+and copy its value in the userdata.txt file. This is necessary to access the site as a logged in user.
