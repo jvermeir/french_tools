@@ -151,8 +151,8 @@ def get_sequence_number_from_file(url):
     return int(float(sequence_number))
 
 
-def test():
-    test_file = Path(__file__).parent / "./test_files/003.html"
+def load_a_test_file():
+    test_file = Path(__file__).parent / "./test/test_files/04-theorie-genre"
     text = read_data_from_file(test_file)
     sections = extract_sections(text)
     transcription_section = extract_transcription_section(sections)
@@ -161,4 +161,5 @@ def test():
     words = (group_words_in_list(all_text))
     print(words)
 
-# load_from_url('https://innerfrench.com/04-theorie-genre')
+# uncomment to test basic functionality
+# load_a_test_file()
