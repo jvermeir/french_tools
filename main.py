@@ -1,10 +1,25 @@
 from pathlib import Path
-
+import argparse
 from word_counter import read_data_from_file, extract_sections, extract_transcription_section, extract_p_sections, \
     extract_text_from_all_p_sections, group_words_in_list, sync_podcasts
 
-sync_podcasts('urls.txt', './data/')
+parser = argparse.ArgumentParser()
+subparsers = parser.add_subparsers(help='help for subcommand', dest="subcommand", required=True)
 
+sync_data_parser = subparsers.add_parser('sync', help='sync data from Inner French website and store on filesystem')
+analyze_data_parser = subparsers.add_parser('analyze', help='analyze data from Inner French website')
+
+command = parser.parse_args()
+
+if command.subcommand == 'sync':
+    sync_podcasts('urls.txt', './data/')
+elif command.subcommand == 'analyze':
+    print('todo')
+else:
+    print(f'unknown command {command.subcommand}')
+
+
+# stuff to experiment with
 
 def load_a_test_file():
     test_file = Path(__file__).parent / "./test/test_files/04-theorie-genre"
