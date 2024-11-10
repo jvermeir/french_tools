@@ -1,4 +1,5 @@
 import json
+import os.path
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -33,6 +34,7 @@ def load_userdata():
 
 
 def load_from_url(url):
+    print(f'loading {url}')
     userdata = load_userdata()
     cookies = {'wordpress_logged_in_432eefc90b98f2ff74b213258c58921e':userdata}
     headers = {'User-Agent': 'Mozilla/5.0'}
@@ -74,16 +76,6 @@ def group_words_in_list(data):
     return words
 
 
-def group_words_per_article(articles: dict[str, Article]) -> dict[str, Article]:
-    words_per_article = dict()
-    for file_name in list(articles):
-        text = articles[file_name].text
-        article = Article(file_name, text)
-        words_per_article[file_name] = article
-
-    return words_per_article
-
-
 def extract_sections(data):
     section_start_positions = [_.start() for _ in re.finditer("<section", data)]
     return [data[start:data.find('</section>', start) + 10] for start in section_start_positions]
@@ -120,25 +112,18 @@ def process_file_data(text_from_file):
     return group_words_in_list(all_text)
 
 
-def write_article(article: Article):
-    filename = "./test_files/" + str(article.sequence_number) + '.json'
-    with open(Path(__file__).parent / 'test' / filename, 'w') as file:
+def write_article(article: Article, data_path):
+    filename = construct_article_data_file_name(article.sequence_number, data_path)
+    with open(Path(__file__).parent / filename, 'w') as file:
         file.write(json.dumps(article.__dict__))
 
 
-def load_all_podcasts_in_file(urls_data_file, data_loader_func=load_from_url):
-    urls = load_files(urls_data_file)
-    urls = [url.strip() for url in urls]
-    data = [Article(url, data_loader_func(url)) for url in urls]
-    for article in data:
-        write_article(article)
-    articles = [Article(a.file_name, a.text) for a in data]
-
-    return articles
+def construct_article_data_file_name(sequence_number, data_path):
+    return data_path + str(sequence_number) + '.json'
 
 
-def load_files(urls_data_file):
-    with open(Path(__file__).parent / urls_data_file, 'r') as file:
+def load_file_list(urls_data_file, data_path):
+    with open(Path(__file__).parent / data_path / urls_data_file, 'r') as file:
         urls = file.readlines()
 
     return urls
@@ -151,15 +136,22 @@ def get_sequence_number_from_file(url):
     return int(float(sequence_number))
 
 
-def load_a_test_file():
-    test_file = Path(__file__).parent / "./test/test_files/04-theorie-genre"
-    text = read_data_from_file(test_file)
-    sections = extract_sections(text)
-    transcription_section = extract_transcription_section(sections)
-    p_sections = extract_p_sections(transcription_section)
-    all_text = extract_text_from_all_p_sections(p_sections)
-    words = (group_words_in_list(all_text))
-    print(words)
+def sync_podcasts(urls_data_file, data_path, data_loader_func=load_from_url):
+    urls = load_file_list(urls_data_file, data_path)
+    urls = [url.strip() for url in urls]
+    data = [get_new_article(data_loader_func, url, data_path) for url in urls]
+    data = [article for article in data if article is not None]
+    for article in data:
+        write_article(article, data_path)
+    articles = [Article(a.file_name, a.text) for a in data]
 
-# uncomment to test basic functionality
-# load_a_test_file()
+    return articles
+
+
+def get_new_article(data_loader_func, url, data_path):
+    article_file_name = construct_article_data_file_name(get_sequence_number_from_file(url), data_path)
+    if not os.path.exists(article_file_name):
+        return Article(url, data_loader_func(url))
+    else:
+        print(f'skipping {article_file_name}')
+        return None

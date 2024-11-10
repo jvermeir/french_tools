@@ -1,9 +1,10 @@
 import json
+import os
 from pathlib import Path
 
-from word_counter import split_words, group_words, Article, group_words_per_article, extract_transcription_section, \
+from word_counter import split_words, group_words, Article, extract_transcription_section, \
     extract_sections, extract_p_sections, extract_text_from_p_section, extract_text_from_all_p_sections, \
-    group_words_in_list, load_all_podcasts_in_file, get_sequence_number_from_file, process_file_data
+    group_words_in_list, sync_podcasts, get_sequence_number_from_file, process_file_data
 from unittest import TestCase
 
 
@@ -192,7 +193,8 @@ def load_page_from_test_data(json_file):
 
 
 def test_list_of_episodes_is_loaded():
-    extracted_data:list[Article] = load_all_podcasts_in_file('./test/test_files/urls.txt', load_page_from_test_data)
+    os.makedirs('./test/test_files/output', exist_ok=True)
+    extracted_data:list[Article] = sync_podcasts('urls.txt', './test/test_files/', load_page_from_test_data)
     TestCase().assertEqual(2, len(extracted_data))
     episode_1 = extracted_data[0]
     episode_2 = extracted_data[1]
