@@ -51,12 +51,12 @@ class Article:
 
 
 def read_data_from_file(path):
-    with open(path, 'r') as file:
+    with open(path, 'r', encoding="utf-8") as file:
         return file.read()
 
 
 def load_userdata():
-    with open(Path(__file__).parent / 'secrets' / 'userdata.txt') as file:
+    with open(Path(__file__).parent / 'secrets' / 'userdata.txt', encoding="utf-8") as file:
         return file.read()
 
 
@@ -73,7 +73,7 @@ def load_text_from_url(url, data_path):
 
 def load_text_from_file(json_file, data_path):
     print(f'loading {json_file} from {data_path}')
-    with open(data_path / json_file, "r") as f:
+    with open(data_path / json_file, "r", encoding="utf-8") as f:
         data: Article = Article(**json.loads(f.read()))
 
     return data.text
@@ -136,7 +136,7 @@ def extract_text_from_p_section(data):
     result = unescape(data)
     result = result.replace('</li>', ' ').replace('</i>', ' ').replace('<i>', ' ').replace('<br/>', ' ').replace(
         '<br />', ' ').replace('<br>', ' ').replace('<p>', ' ').replace('</p>', ' ').replace('</span>', ' ').replace(
-        '</strong>', ' ')
+        '</strong>', ' ').replace('“','')
     result = re.sub('<strong.*?>', ' ', result)
     result = re.sub('<span.*?>', ' ', result)
     result = multiline_anchor_tag.sub(' ', result, re.MULTILINE)
@@ -174,7 +174,7 @@ def construct_article_data_file_name(sequence_number, data_path: Path) -> Path:
 
 
 def load_file_list(urls_data_file, data_path: Path):
-    with open(data_path / urls_data_file, 'r') as file:
+    with open(data_path / urls_data_file, 'r', encoding="utf-8") as file:
         urls = file.readlines()
 
     return urls
@@ -207,7 +207,7 @@ def sum_counts(articles):
                 counts[word] = counts[word] + article.word_count[word]
             else:
                 counts[word] = 1
-                
+
     return counts
 
 

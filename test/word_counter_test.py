@@ -163,6 +163,7 @@ def test_extract_text_from_p_section():
             [00:00:12] 
             [King Krule – Lonely Blue]
             <i></i></li> 
+            “
         </p>"""
 
     plain_text = extract_text_from_p_section(data)
@@ -288,6 +289,7 @@ def test_word_occurs_first():
     TestCase().assertEqual(2, word_occurs_first_in('onlyintwo', word_counts))
 
     TestCase().assertEqual(1, word_occurs_first_in('occurstwice', [article2, article1]))
+
 
 def test_new_words_report():
     file1 = """
