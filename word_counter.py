@@ -1,12 +1,18 @@
+import html
 import json
 import os.path
 import re
 from dataclasses import dataclass
+from os import listdir
+from os.path import isfile, join
 from pathlib import Path
+from typing import List
+import bisect
 
 import requests
 
 whitespace = re.compile(r"\s+")
+multiline_anchor_tag = re.compile(r"<a.*?\n*.*?</a>", re.MULTILINE)
 
 
 @dataclass
@@ -16,11 +22,32 @@ class Article:
     sequence_number: int
     word_count: dict[str, int]
 
-    def __init__(self, file_name, text):
+    @classmethod
+    def from_json(cls, json_data):
+        return cls(json_data["file_name"], json_data["text"], json_data["sequence_number"], json_data["word_count"])
+
+    def __init__(self, file_name, text, sequence_number=None, word_count=None):
         self.file_name = file_name
         self.text = text
-        self.sequence_number = get_sequence_number_from_file(file_name)
-        self.word_count: dict[str, int] = process_file_data(text)
+        self.sequence_number = self.calc_sequence_number(file_name, sequence_number)
+        self.word_count: dict[str, int] = self.calc_word_count(word_count, text)
+
+    def __lt__(self, other):
+        return self.sequence_number < other.sequence_number
+
+    @staticmethod
+    def calc_word_count(word_count: dict[str, int], text):
+        if word_count is None:
+            return process_file_data(text)
+        else:
+            return word_count
+
+    @staticmethod
+    def calc_sequence_number(file_name, sequence_number):
+        if sequence_number is None:
+            return get_sequence_number_from_url_or_file(file_name)
+        else:
+            return sequence_number
 
 
 def read_data_from_file(path):
@@ -29,14 +56,14 @@ def read_data_from_file(path):
 
 
 def load_userdata():
-    with open(Path(__file__).parent / "./secrets/userdata.txt") as file:
+    with open(Path(__file__).parent / 'secrets' / 'userdata.txt') as file:
         return file.read()
 
 
-def load_from_url(url):
+def load_text_from_url(url, data_path):
     print(f'loading {url}')
     userdata = load_userdata()
-    cookies = {'wordpress_logged_in_432eefc90b98f2ff74b213258c58921e':userdata}
+    cookies = {'wordpress_logged_in_432eefc90b98f2ff74b213258c58921e': userdata}
     headers = {'User-Agent': 'Mozilla/5.0'}
     response = requests.get(url, cookies=cookies, headers=headers)
     webpage = response.text
@@ -44,12 +71,27 @@ def load_from_url(url):
     return webpage
 
 
-def split_words(text):
-    data = text.replace('\n', ' ').replace('.', ' ').replace(',', ' ').replace(';', ' ').replace(':', ' ').replace('\'', ' ')
-    data = re.sub('\\[.*?]', '', data)
-    data = whitespace.sub(" ", data).strip()
+def load_text_from_file(json_file, data_path):
+    print(f'loading {json_file} from {data_path}')
+    with open(data_path / json_file, "r") as f:
+        data: Article = Article(**json.loads(f.read()))
 
-    return data.lower().split(" ")
+    return data.text
+
+
+def remove_junk_words(word):
+    if re.match('^[0-9]+[€%]+$', word) or re.match('^[0-9]+$', word) or re.match('^\*\*\*$', word):
+        return ''
+    return word.strip()
+
+
+def unescape(data):
+    return html.unescape(data)
+
+
+def split_words(text):
+    words = [remove_junk_words(word) for word in text.lower().split(' ')]
+    return list(filter(lambda w: len(w.strip()) > 0, words))
 
 
 def group_words(data):
@@ -91,12 +133,19 @@ def extract_p_sections(section):
 
 
 def extract_text_from_p_section(data):
-    result = data.replace("<br/>", " ").replace("<p>", " ").replace("</p>", " ").replace("</span>", " ").replace("</strong>", " ").replace(
-        "<strong>", " ")
-    result = re.sub("<span.*>", " ", result)
-    result = re.sub("<a.*</a>", " ", result)
+    result = unescape(data)
+    result = result.replace('</li>', ' ').replace('</i>', ' ').replace('<i>', ' ').replace('<br/>', ' ').replace(
+        '<br />', ' ').replace('<br>', ' ').replace('<p>', ' ').replace('</p>', ' ').replace('</span>', ' ').replace(
+        '</strong>', ' ')
+    result = re.sub('<strong.*?>', ' ', result)
+    result = re.sub('<span.*?>', ' ', result)
+    result = multiline_anchor_tag.sub(' ', result, re.MULTILINE)
+    result = re.sub('\\[.*?]', '', result)
+    result = result.replace('\n', ' ').replace('.', ' ').replace(',', ' ').replace(':', ' ').replace('\'', '').replace(
+        '(', ' ').replace(')', ' ').replace('?', ' ').replace('!', ' ').replace('!', ' ').replace('$', ' ').replace('%',
+                                                                                                                    ' ')
 
-    return whitespace.sub(" ", result).strip()
+    return whitespace.sub(' ', result).strip()
 
 
 def extract_text_from_all_p_sections(p_sections):
@@ -112,46 +161,119 @@ def process_file_data(text_from_file):
     return group_words_in_list(all_text)
 
 
-def write_article(article: Article, data_path):
+def write_article(article: Article, data_path: Path):
     filename = construct_article_data_file_name(article.sequence_number, data_path)
     with open(Path(__file__).parent / filename, 'w') as file:
         file.write(json.dumps(article.__dict__))
+    print(f'write {filename} with {len(article.word_count.keys())} words')
 
 
-def construct_article_data_file_name(sequence_number, data_path):
-    return data_path + str(sequence_number) + '.json'
+def construct_article_data_file_name(sequence_number, data_path: Path) -> Path:
+    file_name = str(sequence_number) + '.json'
+    return data_path / file_name
 
 
-def load_file_list(urls_data_file, data_path):
-    with open(Path(__file__).parent / data_path / urls_data_file, 'r') as file:
+def load_file_list(urls_data_file, data_path: Path):
+    with open(data_path / urls_data_file, 'r') as file:
         urls = file.readlines()
 
     return urls
 
 
-def get_sequence_number_from_file(url):
+def get_sequence_number_from_url_or_file(url):
     file_name = url.strip('/').split('/')[-1]
     sequence_number = file_name.split('-')[0]
+    if sequence_number.endswith('.json'):
+        sequence_number = sequence_number[:-5]
 
     return int(float(sequence_number))
 
 
-def sync_podcasts(urls_data_file, data_path, data_loader_func=load_from_url):
+def get_new_article(data_loader_func, url, data_path: Path, reload=False):
+    article_path = data_path / 'articles'
+    article_file_name = construct_article_data_file_name(get_sequence_number_from_url_or_file(url), article_path)
+    if not os.path.exists(article_file_name) or reload:
+        return Article(url, data_loader_func(url, article_path))
+    else:
+        print(f'skipping {article_file_name}')
+        return None
+
+
+def sum_counts(articles):
+    counts = dict()
+    for article in articles:
+        for word in article.word_count.keys():
+            if word in counts:
+                counts[word] = counts[word] + article.word_count[word]
+            else:
+                counts[word] = 1
+                
+    return counts
+
+
+def sync_podcasts(urls_data_file, data_root: Path, data_loader_func=load_text_from_url) -> int:
+    data_path = Path(__file__).parent / data_root
     urls = load_file_list(urls_data_file, data_path)
     urls = [url.strip() for url in urls]
     data = [get_new_article(data_loader_func, url, data_path) for url in urls]
     data = [article for article in data if article is not None]
     for article in data:
-        write_article(article, data_path)
-    articles = [Article(a.file_name, a.text) for a in data]
+        write_article(article, data_path / 'articles')
+
+    return len(data)
+
+
+def is_word_in_list(word, words: dict):
+    return word in words
+
+
+def word_occurs_first_in(word, articles: List[Article]):
+    filtered_list: List[Article] = sorted(
+        list(filter(lambda article: is_word_in_list(word, article.word_count), articles)))
+
+    return filtered_list[0].sequence_number
+
+
+def analyze_articles(articles: List[Article]) -> dict[int, List[str]]:
+    result = dict()
+
+    words = set()
+    [words.update(list(article.word_count.keys())) for article in articles]
+
+    for word in words:
+        first_occurrence = word_occurs_first_in(word, articles)
+        word_list = result.get(first_occurrence, [])
+        bisect.insort(word_list, word)
+        result[first_occurrence] = word_list
+
+    return result
+
+
+def analyze(data_path: Path):
+    articles_path = data_path / 'articles'
+    data_files = [f for f in listdir(articles_path) if isfile(join(articles_path, f)) and f.endswith('.json')]
+
+    articles = list[Article]()
+    for data_file in data_files:
+        with open(articles_path / data_file, 'r') as file:
+            article: Article = Article(**json.load(file))
+            articles.append(article)
+
+    first_occurrences = analyze_articles(articles)
+
+    with open(data_path / 'first_occurrences.json', 'w') as file:
+        file.write(json.dumps(first_occurrences))
+
+
+def re_load(data_path: Path):
+    article_folder = Path(__file__).parent / data_path / 'articles'
+    data_files = [f for f in listdir(article_folder) if isfile(join(article_folder, f)) and f.endswith('.json')]
+
+    data_loader_func = load_text_from_file
+    articles = [get_new_article(data_loader_func, file, data_path, True) for file in data_files]
+    articles = [article for article in articles if article is not None]
+
+    for article in articles:
+        write_article(article, article_folder)
 
     return articles
-
-
-def get_new_article(data_loader_func, url, data_path):
-    article_file_name = construct_article_data_file_name(get_sequence_number_from_file(url), data_path)
-    if not os.path.exists(article_file_name):
-        return Article(url, data_loader_func(url))
-    else:
-        print(f'skipping {article_file_name}')
-        return None

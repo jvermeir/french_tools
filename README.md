@@ -1,6 +1,6 @@
 # Tools to support learning french
 
-Don't know where this is going yet. I'm learning F rench and thought I 
+Don't know where this is going yet. I'm learning French and thought I 
 might need some thingies to support me. Like grabbing all words from 
 the transcript of a podcast on [inner french](https://innerfrench.com/). 
 
@@ -15,5 +15,5 @@ python3 -m venv venv
 source venv/bin/activate
 ```
 
-Create a folder named `secrets` and a file named `userdata.txt`. Open the inner french site and log in. Find a cookie with a name like `wordpress_logged_in_`
-and copy its value in the userdata.txt file. This is necessary to access the site as a logged in user.
+Create a folder named `secrets` and a file named `userdata.txt`. Open the inner French site and log in. Find a cookie with a name like `wordpress_logged_in_`
+and copy its value in the userdata.txt file. This is necessary to access the site as a logged-in user.
