@@ -234,18 +234,39 @@ def word_occurs_first_in(word, articles: List[Article]):
     return filtered_list[0].sequence_number
 
 
+class WordCount:
+    def __init__(self, episode: str, newWords: int, words: List[str]):
+        self.episode = episode
+        self.newWords = newWords
+        self.words = words
+
+    def __eq__(self, other):
+        return self.episode == other.episode and self.newWords == other.newWords and self.words == other.words
+
+    def __str__(self):
+        return f'episode:{self.episode},newWords:{self.newWords},word:[{self.words}]'
+
+    def __lt__(self, other):
+        return self.episode < other.episode
+
+
+def word_count_to_json(word_count: List[WordCount]):
+    return json.dumps([word.__dict__ for word in word_count])
+
 def analyze_articles(articles: List[Article]) -> dict[int, List[str]]:
-    result = dict()
+    first_occurrences = dict()
 
     words = set()
     [words.update(list(article.word_count.keys())) for article in articles]
 
     for word in words:
         first_occurrence = word_occurs_first_in(word, articles)
-        word_list = result.get(first_occurrence, [])
+        word_list = first_occurrences.get(first_occurrence, [])
         bisect.insort(word_list, word)
-        result[first_occurrence] = word_list
+        first_occurrences[first_occurrence] = word_list
 
+    result = []
+    [result.append(WordCount(file, len(first_occurrences[file]),(first_occurrences[file]))) for file in first_occurrences.keys()]
     return result
 
 

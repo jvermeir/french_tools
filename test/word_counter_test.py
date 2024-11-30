@@ -6,7 +6,8 @@ from pathlib import Path
 from word_counter import split_words, group_words, Article, extract_transcription_section, \
     extract_sections, extract_p_sections, extract_text_from_p_section, extract_text_from_all_p_sections, \
     group_words_in_list, sync_podcasts, get_sequence_number_from_url_or_file, process_file_data, sum_counts, \
-    word_occurs_first_in, analyze_articles, remove_junk_words, analyze, get_new_article, write_article, unescape
+    word_occurs_first_in, analyze_articles, remove_junk_words, analyze, get_new_article, write_article, unescape, \
+    word_count_to_json, WordCount
 from unittest import TestCase
 
 
@@ -143,7 +144,7 @@ bla bla
             </span>
             épisode du Cottongue Podcast.
         </p>""",
- """<p>\n            épisode du Cottongue Podcast.\n        </p>"""
+        """<p>\n            épisode du Cottongue Podcast.\n        </p>"""
     ]
     TestCase().assertEqual(extracted_data, expected_data)
 
@@ -201,7 +202,7 @@ def test_extract_text_from_all_p_sections():
     TestCase().assertEqual(extracted_data, expected_data)
 
 
-def load_page_from_test_data(json_file, data_path:Path):
+def load_page_from_test_data(json_file, data_path: Path):
     data_file = data_path / json_file
     with open(data_file, "r") as f:
         data = Article(**json.loads(f.read()))
@@ -315,9 +316,11 @@ def test_new_words_report():
 
     word_counts = [article1, article2]
 
-    TestCase().assertEqual({1: ['occurstwice', 'onlyinone'], 2: ['onlyintwo']}, analyze_articles(word_counts))
+    articles = analyze_articles(word_counts)
+    TestCase().assertEqual('[{"episode": 1, "newWords": 2, "words": ["occurstwice", "onlyinone"]}, {"episode": 2, "newWords": 1, "words": ["onlyintwo"]}]'.strip(), json.dumps([ob.__dict__ for ob in articles]).strip())
+    TestCase().assertEqual([WordCount(1,2,['occurstwice', 'onlyinone']), WordCount(2,1,['onlyintwo'])], articles)
 
 
 def test_html_characters_are_unescaped():
-    data ='l&#8217;imaginez'
+    data = 'l&#8217;imaginez'
     TestCase().assertEqual('l’imaginez', unescape(data))
