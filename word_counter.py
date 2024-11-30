@@ -124,7 +124,11 @@ def extract_sections(data):
 
 
 def extract_transcription_section(sections):
-    return next((section for section in sections if section.find("Transcription de") >= 0), "")
+    transcription_section = next((section for section in sections if section.find("Transcription de") >= 0), "TRANSCRIPTION NOT FOUND")
+    if transcription_section == "TRANSCRIPTION NOT FOUND":
+        print('ERROR: this file does not contain a transcription section, check the credentials in secrets/userdata.txt')
+        exit(-1)
+    return transcription_section
 
 
 def extract_p_sections(section):
