@@ -2,13 +2,13 @@ import json
 import os
 import shutil
 from pathlib import Path
+from unittest import TestCase
 
 from word_counter import split_words, group_words, Article, extract_transcription_section, \
     extract_sections, extract_p_sections, extract_text_from_p_section, extract_text_from_all_p_sections, \
     group_words_in_list, sync_podcasts, get_sequence_number_from_url_or_file, process_file_data, sum_counts, \
-    word_occurs_first_in, analyze_articles, remove_junk_words, analyze, get_new_article, write_article, unescape, \
-    word_count_to_json, WordCount
-from unittest import TestCase
+    word_occurs_first_in, analyze_articles, remove_junk_words, unescape, \
+    WordCount
 
 
 def test_remove_junk():
