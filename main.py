@@ -19,7 +19,7 @@ exercise_parser.add_argument('--file',
                               )
 plot_parser = subparsers.add_parser('plot', help='plot the word counts and output to a file')
 plot_parser.add_argument('--file',
-                              dest='file_name',
+                              dest='output_file_name',
                               type=str,
                               help='The name of the output file',
                               )
@@ -32,10 +32,10 @@ elif command.subcommand == 'analyze':
     analyze(Path('data'))
 elif command.subcommand == 'reload':
     re_load(Path('data'))
+elif command.subcommand == 'plot':
+    plot_word_counts(Path('data'), command.output_file_name)
 elif command.subcommand == 'exercise':
     do_exercise(command.file_name)
-elif command.subcommand == 'plot':
-    plot_word_counts(analyze_articles(re_load(Path('data'))), command.file_name)
 else:
     print(f'unknown command {command.subcommand}')
 

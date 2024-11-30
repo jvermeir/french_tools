@@ -234,20 +234,36 @@ def word_occurs_first_in(word, articles: List[Article]):
     return filtered_list[0].sequence_number
 
 
+@dataclass
 class WordCount:
-    def __init__(self, episode: int, newWords: int, words: List[str]):
+    def __init__(self, episode: int, count: int, words: List[str]):
         self.episode = episode
-        self.newWords = newWords
+        self.count = count
         self.words = words
 
     def __eq__(self, other):
-        return self.episode == other.episode and self.newWords == other.newWords and self.words == other.words
+        return self.episode == other.episode and self.count == other.count and self.words == other.words
 
     def __str__(self):
-        return f'episode:{self.episode},newWords:{self.newWords},word:[{self.words}]'
+        return f'episode:{self.episode},newWords:{self.count},word:[{self.words}]'
 
     def __lt__(self, other):
         return self.episode < other.episode
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(data['episode'], data['count'], data['words'])
+
+
+class WordCountJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, WordCount):
+            return {
+                'episode': obj.episode,
+                'count': obj.count,
+                'words': obj.words
+            }
+        return super().default(obj)
 
 
 def word_count_to_json(word_count: List[WordCount]):
@@ -283,8 +299,10 @@ def analyze(data_path: Path):
 
     first_occurrences = analyze_articles(articles)
 
-    with open(data_path / 'first_occurrences.json', 'w') as file:
-        file.write(json.dumps(first_occurrences))
+    first_occurances_file = data_path / 'first_occurrences.json'
+    with open(first_occurances_file, 'w') as file:
+        file.write(json.dumps(first_occurrences, cls=WordCountJSONEncoder))
+        print(f'output in {str(first_occurances_file)}')
 
 
 def re_load(data_path: Path):
@@ -301,11 +319,13 @@ def re_load(data_path: Path):
     return articles
 
 
-def plot_word_counts(word_counts, output_file):
-    total_number_of_words = sum(word_count.newWords for word_count in word_counts)
+def plot_word_counts(data_path:Path, output_file):
+    with open(data_path / 'first_occurrences.json', "r", encoding="utf-8") as f:
+        word_counts = [WordCount.from_dict(item) for item in json.load(f)]
     word_counts.sort()
     episodes = [wc.episode for wc in word_counts]
     word_lengths = [len(wc.words) for wc in word_counts]
+    total_number_of_words = sum(word_count.count for word_count in word_counts)
 
     fig, ax = plt.subplots(figsize=(10, 6))
     bars = ax.bar(episodes, word_lengths, color='skyblue')
@@ -321,3 +341,4 @@ def plot_word_counts(word_counts, output_file):
     plt.tight_layout()
     plt.savefig(output_file)
     plt.close()
+    print(f'output in {output_file}')
