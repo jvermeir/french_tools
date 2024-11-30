@@ -1,7 +1,8 @@
 from pathlib import Path
 import argparse
 from word_counter import read_data_from_file, extract_sections, extract_transcription_section, extract_p_sections, \
-    extract_text_from_all_p_sections, group_words_in_list, sync_podcasts, analyze, re_load
+    extract_text_from_all_p_sections, group_words_in_list, sync_podcasts, analyze, re_load, plot_word_counts, \
+    analyze_articles
 from word_exercise import do_exercise
 
 parser = argparse.ArgumentParser()
@@ -16,6 +17,12 @@ exercise_parser.add_argument('--file',
                               type=str,
                               help='The name of the file to load from data/words',
                               )
+plot_parser = subparsers.add_parser('plot', help='plot the word counts and output to a file')
+plot_parser.add_argument('--file',
+                              dest='file_name',
+                              type=str,
+                              help='The name of the output file',
+                              )
 
 command = parser.parse_args()
 
@@ -27,6 +34,8 @@ elif command.subcommand == 'reload':
     re_load(Path('data'))
 elif command.subcommand == 'exercise':
     do_exercise(command.file_name)
+elif command.subcommand == 'plot':
+    plot_word_counts(analyze_articles(re_load(Path('data'))), command.file_name)
 else:
     print(f'unknown command {command.subcommand}')
 

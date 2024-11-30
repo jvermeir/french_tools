@@ -8,7 +8,7 @@ from os.path import isfile, join
 from pathlib import Path
 from typing import List
 import bisect
-
+import matplotlib.pyplot as plt
 import requests
 
 whitespace = re.compile(r"\s+")
@@ -235,7 +235,7 @@ def word_occurs_first_in(word, articles: List[Article]):
 
 
 class WordCount:
-    def __init__(self, episode: str, newWords: int, words: List[str]):
+    def __init__(self, episode: int, newWords: int, words: List[str]):
         self.episode = episode
         self.newWords = newWords
         self.words = words
@@ -253,7 +253,8 @@ class WordCount:
 def word_count_to_json(word_count: List[WordCount]):
     return json.dumps([word.__dict__ for word in word_count])
 
-def analyze_articles(articles: List[Article]) -> dict[int, List[str]]:
+
+def analyze_articles(articles: List[Article]) -> list[WordCount]:
     first_occurrences = dict()
 
     words = set()
@@ -298,3 +299,25 @@ def re_load(data_path: Path):
         write_article(article, article_folder)
 
     return articles
+
+
+def plot_word_counts(word_counts, output_file):
+    total_number_of_words = sum(word_count.newWords for word_count in word_counts)
+    word_counts.sort()
+    episodes = [wc.episode for wc in word_counts]
+    word_lengths = [len(wc.words) for wc in word_counts]
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    bars = ax.bar(episodes, word_lengths, color='skyblue')
+
+    for bar, word_length in zip(bars, word_lengths):
+        height = bar.get_height()
+        ax.text(bar.get_x() + bar.get_width() / 2, height / 2, str(word_length), ha='center', va='center', fontsize=8, rotation=90)
+
+    ax.set_xlabel('Episode')
+    ax.set_ylabel('Number of Words')
+    ax.set_title('Number of new Words per Episode, Total: ' + str(total_number_of_words))
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig(output_file)
+    plt.close()
