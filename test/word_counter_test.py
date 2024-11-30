@@ -317,6 +317,7 @@ def test_new_words_report():
     word_counts = [article1, article2]
 
     articles = analyze_articles(word_counts)
+    articles.sort()
     TestCase().assertEqual('[{"episode": 1, "count": 2, "words": ["occurstwice", "onlyinone"]}, {"episode": 2, "count": 1, "words": ["onlyintwo"]}]'.strip(), json.dumps([ob.__dict__ for ob in articles]).strip())
     TestCase().assertEqual([WordCount(1,2,['occurstwice', 'onlyinone']), WordCount(2,1,['onlyintwo'])], articles)
 

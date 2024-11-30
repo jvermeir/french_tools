@@ -245,7 +245,7 @@ class WordCount:
         return self.episode == other.episode and self.count == other.count and self.words == other.words
 
     def __str__(self):
-        return f'episode:{self.episode},newWords:{self.count},word:[{self.words}]'
+        return f'episode:{self.episode},count:{self.count},word:[{self.words}]'
 
     def __lt__(self, other):
         return self.episode < other.episode
