@@ -37,7 +37,7 @@ class Article:
 
     @staticmethod
     def calc_word_count(word_count: dict[str, int], text):
-        if word_count is None:
+        if word_count is None or len(word_count.keys()) == 0:
             return process_file_data(text)
         else:
             return word_count
@@ -341,7 +341,14 @@ def plot_word_counts(data_path:Path, output_file):
     ax.set_xlabel('Episode')
     ax.set_ylabel('Number of Words')
     ax.set_title('Number of new Words per Episode, Total: ' + str(total_number_of_words))
+
     plt.xticks(rotation=45)
+    ax.set_xlim(left=0.5)
+    tick_positions = list(range(5, max(episodes) + 1, 5))
+    tick_positions.insert(0, 1)
+    ax.set_xticks(tick_positions)
+    ax.set_xticklabels([str(i) for i in tick_positions])
+
     plt.tight_layout()
     plt.savefig(output_file)
     plt.close()
