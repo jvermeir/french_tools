@@ -16,6 +16,8 @@ def test_remove_junk():
     TestCase().assertEqual('', remove_junk_words('1500\u20ac'))
     TestCase().assertEqual('', remove_junk_words('100%'))
     TestCase().assertEqual('', remove_junk_words('***'))
+    TestCase().assertEqual('', remove_junk_words(','))
+    TestCase().assertEqual('', remove_junk_words('-'))
     TestCase().assertEqual('abcdé', remove_junk_words('abcdé'))
 
 

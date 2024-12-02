@@ -14,6 +14,59 @@ import requests
 whitespace = re.compile(r"\s+")
 multiline_anchor_tag = re.compile(r"<a.*?\n*.*?</a>", re.MULTILINE)
 
+# TODO
+# - clean up this messy code
+# - what about
+# {
+#     "episode": 39,
+#     "count": 193,
+#     "words": [
+#       "#metoo",
+#       ";\"><a",
+# and
+# "episode": 22,
+# "count": 421,
+# "words": [
+#              "//beq",
+# and
+# {
+#     "episode": 5,
+#     "count": 398,
+#     "words": [
+#                  ";\">00",
+# and
+# {
+#     "episode": 21,
+#     "count": 250,
+#     "words": [
+#                  "+2",
+# and
+# {
+#     "episode": 12,
+#     "count": 264,
+#     "words": [
+#                  "-moi",
+#                  "-vive",
+# and
+# {
+#     "episode": 38,
+#     "count": 283,
+#     "words": [
+#                  "//www",
+# and
+# {
+#     "episode": 1,
+#     "count": 699,
+#     "words": [
+#                  ";\">",
+#                  "<a",
+#                  "a",
+# and
+# the error with the extra section in episode 56
+
+
+
+
 
 @dataclass
 class Article:
@@ -57,7 +110,7 @@ def read_data_from_file(path):
 
 def load_userdata():
     with open(Path(__file__).parent / 'secrets' / 'userdata.txt', encoding="utf-8") as file:
-        return file.read()
+        return file.read().rstrip()
 
 
 def load_text_from_url(url, data_path):
@@ -80,7 +133,9 @@ def load_text_from_file(json_file, data_path):
 
 
 def remove_junk_words(word):
-    if re.match('^[0-9]+[€%]+$', word) or re.match('^[0-9]+$', word) or re.match('^\*\*\*$', word):
+    if re.match('^[0-9]+.*', word) or re.match('^[0-9]+$', word) or re.match('^\*\*\*$', word):
+        return ''
+    elif word in [';', '-', ',', '/', '+', '=', '&']:
         return ''
     return word.strip()
 
@@ -140,7 +195,8 @@ def extract_text_from_p_section(data):
     result = unescape(data)
     result = result.replace('</li>', ' ').replace('</i>', ' ').replace('<i>', ' ').replace('<br/>', ' ').replace(
         '<br />', ' ').replace('<br>', ' ').replace('<p>', ' ').replace('</p>', ' ').replace('</span>', ' ').replace(
-        '</strong>', ' ').replace('“','')
+        '</strong>', ' ').replace('“','').replace('</b>', ' ').replace('<b>', ' ').replace('</a>', ' ').replace('<em>', ' ').replace('</em>', ' ').replace('<em>', ' ')
+
     result = re.sub('<strong.*?>', ' ', result)
     result = re.sub('<span.*?>', ' ', result)
     result = multiline_anchor_tag.sub(' ', result, re.MULTILINE)
