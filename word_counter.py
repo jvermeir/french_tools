@@ -12,60 +12,18 @@ import matplotlib.pyplot as plt
 import requests
 
 whitespace = re.compile(r"\s+")
-multiline_anchor_tag = re.compile(r"<a.*?\n*.*?</a>", re.MULTILINE)
+multiline_anchor_tag = re.compile(r"<a.*?>", re.MULTILINE)
 
 # TODO
 # - clean up this messy code
 # - what about
 # {
-#     "episode": 39,
-#     "count": 193,
-#     "words": [
-#       "#metoo",
-#       ";\"><a",
-# and
-# "episode": 22,
-# "count": 421,
-# "words": [
-#              "//beq",
-# and
-# {
-#     "episode": 5,
-#     "count": 398,
-#     "words": [
-#                  ";\">00",
-# and
-# {
 #     "episode": 21,
 #     "count": 250,
 #     "words": [
 #                  "+2",
-# and
-# {
-#     "episode": 12,
-#     "count": 264,
-#     "words": [
-#                  "-moi",
-#                  "-vive",
-# and
-# {
-#     "episode": 38,
-#     "count": 283,
-#     "words": [
-#                  "//www",
-# and
-# {
-#     "episode": 1,
-#     "count": 699,
-#     "words": [
-#                  ";\">",
-#                  "<a",
-#                  "a",
-# and
+
 # the error with the extra section in episode 56
-
-
-
 
 
 @dataclass
@@ -179,9 +137,11 @@ def extract_sections(data):
 
 
 def extract_transcription_section(sections):
-    transcription_section = next((section for section in sections if section.find("Transcription de") >= 0), "TRANSCRIPTION NOT FOUND")
+    transcription_section = next((section for section in sections if section.find("Transcription de") >= 0),
+                                 "TRANSCRIPTION NOT FOUND")
     if transcription_section == "TRANSCRIPTION NOT FOUND":
-        print('ERROR: this file does not contain a transcription section, check the credentials in secrets/userdata.txt')
+        print(
+            'ERROR: this file does not contain a transcription section, check the credentials in secrets/userdata.txt')
         exit(-1)
     return transcription_section
 
@@ -195,15 +155,16 @@ def extract_text_from_p_section(data):
     result = unescape(data)
     result = result.replace('</li>', ' ').replace('</i>', ' ').replace('<i>', ' ').replace('<br/>', ' ').replace(
         '<br />', ' ').replace('<br>', ' ').replace('<p>', ' ').replace('</p>', ' ').replace('</span>', ' ').replace(
-        '</strong>', ' ').replace('“','').replace('</b>', ' ').replace('<b>', ' ').replace('</a>', ' ').replace('<em>', ' ').replace('</em>', ' ').replace('<em>', ' ')
+        '</strong>', ' ').replace('“', '').replace('</b>', ' ').replace('<b>', ' ').replace('<em>', ' ').replace(
+        '</em>', ' ').replace('<em>', ' ').replace('«', '').replace('»', '').replace('–', ' ').replace('…', ' ')
 
     result = re.sub('<strong.*?>', ' ', result)
     result = re.sub('<span.*?>', ' ', result)
     result = multiline_anchor_tag.sub(' ', result, re.MULTILINE)
     result = re.sub('\\[.*?]', '', result)
     result = result.replace('\n', ' ').replace('.', ' ').replace(',', ' ').replace(':', ' ').replace('\'', '').replace(
-        '(', ' ').replace(')', ' ').replace('?', ' ').replace('!', ' ').replace('!', ' ').replace('$', ' ').replace('%',
-                                                                                                                    ' ')
+        '(', ' ').replace(')', ' ').replace('?', ' ').replace('!', ' ').replace('!', ' ').replace('$', ' ').replace(
+        '%', ' ').replace('</a>', ' ')
 
     return whitespace.sub(' ', result).strip()
 
@@ -343,7 +304,8 @@ def analyze_articles(articles: List[Article]) -> list[WordCount]:
         first_occurrences[first_occurrence] = word_list
 
     result = []
-    [result.append(WordCount(file, len(first_occurrences[file]),(first_occurrences[file]))) for file in first_occurrences.keys()]
+    [result.append(WordCount(file, len(first_occurrences[file]), (first_occurrences[file]))) for file in
+     first_occurrences.keys()]
     return result
 
 
@@ -379,7 +341,7 @@ def re_load(data_path: Path):
     return articles
 
 
-def plot_word_counts(data_path:Path, output_file):
+def plot_word_counts(data_path: Path, output_file):
     with open(data_path / 'first_occurrences.json', "r", encoding="utf-8") as f:
         word_counts = [WordCount.from_dict(item) for item in json.load(f)]
     word_counts.sort()
@@ -392,7 +354,8 @@ def plot_word_counts(data_path:Path, output_file):
 
     for bar, word_length in zip(bars, word_lengths):
         height = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width() / 2, height / 2, str(word_length), ha='center', va='center', fontsize=8, rotation=90)
+        ax.text(bar.get_x() + bar.get_width() / 2, height / 2, str(word_length), ha='center', va='center', fontsize=8,
+                rotation=90)
 
     ax.set_xlabel('Episode')
     ax.set_ylabel('Number of Words')

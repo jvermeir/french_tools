@@ -172,6 +172,9 @@ def test_extract_text_from_p_section():
     plain_text = extract_text_from_p_section(data)
     expected_data = """Bonjour à tous et bienvenue C’est le troisième épisode du Cottongue Podcast"""
     TestCase().assertEqual(expected_data, plain_text)
+    TestCase().assertEqual('',  extract_text_from_p_section('<a id="case 1 ;"></a>'))
+    TestCase().assertEqual('aap',  extract_text_from_p_section('<a id="case 2 ;">aap'))
+    TestCase().assertEqual('un site',  extract_text_from_p_section('<a href="https://beq.ebooksgratuits.com/vents/Maupassant.htm">un site</a>'))
 
 
 def test_extract_text_from_all_p_sections():
